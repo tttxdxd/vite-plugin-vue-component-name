@@ -43,20 +43,21 @@ function compileCode(code: string, type: 'script') {
 }
 
 function parseTag(code: string, type: 'script' | 'template' | 'style') {
-  const regex = new RegExp(`<${type}[^>]*>`)
+  const regex = new RegExp(`<${type}([^>]*)>`)
   const match = code.match(regex)
 
   if (!match)
     return null
 
-  const tag = match[0]
+  const tag = match[1]
   const attrs: Record<string, boolean | string> = {}
+  const temp = tag.trim().split(' ').map(pair => pair.split('='))
 
-  for (const [key, value] of tag.split(' ').map(pair => pair.split('='))) {
+  for (const [key, value] of temp) {
     if (typeof value === 'undefined')
       attrs[key] = true
     if (typeof value === 'string') {
-      if (['\'', '\"'].includes(value) && value[0] === value[value.length - 1])
+      if (['\'', '\"'].includes(value[0]) && value[0] === value[value.length - 1])
         attrs[key] = value.slice(1, -1)
       else attrs[key] = value
     }
