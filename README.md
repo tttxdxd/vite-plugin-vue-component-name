@@ -35,7 +35,7 @@ yarn add vite-plugin-vue-component-name -D
 - Config plugin in vite.config.ts. In this way, the required functions can be introduced as needed
 
 ```ts
-import { defineConfig, Plugin } from 'vite'
+import { Plugin, defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueComponentName from 'vite-plugin-vue-component-name'
 
@@ -47,13 +47,11 @@ export default defineConfig({
 - SFC
 
 ```vue
-<template>
-  <div>hello world {{ a }}</div>
-</template>
+<script lang="ts" setup name="App"></script>
 
-<script lang="ts" setup name="App">
-  const a = 1
-</script>
+<template>
+  <div>hello world</div>
+</template>
 ```
 
 ## Thanks

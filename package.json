@@ -52,6 +52,9 @@
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   },
+  "peerDependencies": {
+    "vite": ">=2.0.0"
+  },
   "dependencies": {
     "magic-string": "^0.30.0"
   },
@@ -69,8 +72,5 @@
     "unbuild": "^0.8.11",
     "vite": "^3.1.2",
     "vitest": "^0.23.4"
-  },
-  "peerDependencies": {
-    "vite": ">=2.0.0"
   }
 }

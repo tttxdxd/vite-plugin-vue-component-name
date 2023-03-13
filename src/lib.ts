@@ -1,11 +1,12 @@
-
 import MagicString from 'magic-string'
 
 export function supportScriptName(code: string, id: string, onlySetup?: boolean) {
   const { name, lang, setup } = compileScript(code)
 
-  if (!name) return null
-  if (onlySetup && !setup) return null
+  if (!name)
+    return null
+  if (onlySetup && !setup)
+    return null
 
   const str = new MagicString(code)
 
@@ -23,19 +24,21 @@ export default defineComponent({
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function compileCode(code: string, type: 'script') {
   const regex = new RegExp(`<${type}[^>]*>`)
   const startMatch = code.match(regex)
 
-  if (!startMatch) return ''
+  if (!startMatch)
+    return ''
 
   const startTag = startMatch[0]
-  const startIndex = code.indexOf(startTag) + + startTag.length
+  const startIndex = code.indexOf(startTag) + +startTag.length
   const endIndex = code.indexOf(`</${type}>`, startIndex)
 
   return {
     startTag,
-    content: code.slice(startIndex, endIndex)
+    content: code.slice(startIndex, endIndex),
   }
 }
 
@@ -43,29 +46,33 @@ function parseTag(code: string, type: 'script' | 'template' | 'style') {
   const regex = new RegExp(`<${type}[^>]*>`)
   const match = code.match(regex)
 
-  if (!match) return null
+  if (!match)
+    return null
 
   const tag = match[0]
   const attrs: Record<string, boolean | string> = {}
 
   for (const [key, value] of tag.split(' ').map(pair => pair.split('='))) {
-    if (typeof value === 'undefined') attrs[key] = true
+    if (typeof value === 'undefined')
+      attrs[key] = true
     if (typeof value === 'string') {
-      if (['\'', '\"'].includes(value) && value[0] === value[value.length - 1]) attrs[key] = value.slice(1, -1)
+      if (['\'', '\"'].includes(value) && value[0] === value[value.length - 1])
+        attrs[key] = value.slice(1, -1)
       else attrs[key] = value
     }
   }
 
   return {
     tag,
-    attrs
+    attrs,
   }
 }
 
 function compileScript(code: string) {
   const result = parseTag(code, 'script')
 
-  if (!result) return { name: '', lang: '' }
+  if (!result)
+    return { name: '', lang: '' }
 
   return {
     name: result.attrs.name,

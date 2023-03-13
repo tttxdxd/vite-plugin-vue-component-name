@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import plugin, { ComponentNameOptions } from '../src'
+import type { ComponentNameOptions } from '../src'
+import plugin from '../src'
 
 function createVitePlugin(options?: ComponentNameOptions) {
   const { name, transform } = plugin(options)
@@ -28,5 +29,4 @@ describe('plugin test', () => {
 
     expect(ret).toBe(null)
   })
-
 })

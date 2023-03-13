@@ -20,18 +20,19 @@ export interface ComponentNameOptions {
 }
 
 export default (options: ComponentNameOptions = {}): Plugin => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { enable = true, setup = false, filepath = false } = options
 
   return {
     name: 'vite:component-name-support',
     enforce: 'pre',
     async transform(code: string, id: string) {
-      if (!enable) return null
-      if (!(/\.vue$/.test(id))) {
+      if (!enable)
         return null
-      }
+      if (!(/\.vue$/.test(id)))
+        return null
 
       return supportScriptName(code, id, setup) as any
-    }
+    },
   }
 }
