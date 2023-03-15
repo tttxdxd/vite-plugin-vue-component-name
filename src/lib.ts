@@ -1,7 +1,7 @@
 import MagicString from 'magic-string'
 
 export function supportScriptName(code: string, id: string, onlySetup?: boolean) {
-  const { name, lang, setup } = compileScript(code)
+  const { name, lang, setup, scriptPos, namePos, isEmpty } = compileScript(code)
 
   if (!name)
     return null
@@ -9,6 +9,11 @@ export function supportScriptName(code: string, id: string, onlySetup?: boolean)
     return null
 
   const str = new MagicString(code)
+
+  if (isEmpty)
+    str.remove(scriptPos.start, scriptPos.end)
+  else
+    str.remove(namePos.start, namePos.end)
 
   str.appendLeft(0,
     `<script ${lang ? `lang="${lang}"` : ''}>
@@ -24,60 +29,108 @@ export default defineComponent({
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function compileCode(code: string, type: 'script') {
-  const regex = new RegExp(`<${type}[^>]*>`)
+function compileScript(code: string) {
+  const result = parseScript(code)
+
+  if (!result)
+    return { name: '', lang: '', setup: false, namePos: { start: 0, end: 0 }, scriptPos: { start: 0, end: 0 }, isEmpty: false }
+
+  return {
+    name: result.attrs.name,
+    lang: result.attrs.lang,
+    setup: !!result.attrs.setup,
+    namePos: result.namePos,
+    scriptPos: result.scriptPos,
+    isEmpty: result.isEmpty,
+  }
+}
+
+function parseScript(code: string) {
+  const regex = /<script([^>]*)>/
   const startMatch = code.match(regex)
 
   if (!startMatch)
     return ''
 
   const startTag = startMatch[0]
-  const startIndex = code.indexOf(startTag) + +startTag.length
-  const endIndex = code.indexOf(`</${type}>`, startIndex)
+
+  const startIndex = code.indexOf(startTag) + startTag.length
+  const endIndex = code.indexOf('</script>', startIndex)
+  const content = code.slice(startIndex, endIndex)
+  const isEmpty = content.replace(/\/\/.*/ig, '').replace(/\/\*\*.*\*\//igs, '').trim().length === 0
+  const scriptPos = {
+    start: startIndex - startTag.length,
+    end: endIndex + '</script>'.length,
+  }
+  const { attrs, namePos } = parseTag(startMatch[1], scriptPos.start + 7)
 
   return {
-    startTag,
-    content: code.slice(startIndex, endIndex),
-  }
-}
-
-function parseTag(code: string, type: 'script' | 'template' | 'style') {
-  const regex = new RegExp(`<${type}([^>]*)>`)
-  const match = code.match(regex)
-
-  if (!match)
-    return null
-
-  const tag = match[1]
-  const attrs: Record<string, boolean | string> = {}
-  const temp = tag.trim().split(' ').map(pair => pair.split('='))
-
-  for (const [key, value] of temp) {
-    if (typeof value === 'undefined')
-      attrs[key] = true
-    if (typeof value === 'string') {
-      if (['\'', '\"'].includes(value[0]) && value[0] === value[value.length - 1])
-        attrs[key] = value.slice(1, -1)
-      else attrs[key] = value
-    }
-  }
-
-  return {
-    tag,
     attrs,
+    namePos,
+    scriptPos,
+    content,
+    isEmpty,
   }
 }
 
-function compileScript(code: string) {
-  const result = parseTag(code, 'script')
+function parseTag(tag: string, start = 0) {
+  const attrs: Record<string, boolean | string> = {}
+  const namePos = { start: 0, end: 0 }
+  let key = ''
+  let value: undefined | string
 
-  if (!result)
-    return { name: '', lang: '' }
+  function assign(i: number) {
+    if (key === 'name') {
+      if (typeof value === 'undefined')
+        throw new SyntaxError('The name attribute must be assigned a value.')
+
+      namePos.start = i - value.length - 5
+      namePos.end = i
+
+      while (tag[namePos.start - 1] === ' ')
+        namePos.start -= 1
+    }
+    if (key)
+      attrs[key] = typeof value === 'undefined' ? true : parseQuotes(value)
+
+    key = ''
+    value = undefined
+  }
+
+  for (let i = 0, len = tag.length; i < len; i++) {
+    const char = tag[i]
+
+    if (char === ' ') {
+      assign(i)
+      continue
+    }
+    else if (char === '=') {
+      value = ''
+      continue
+    }
+
+    if (typeof value === 'undefined')
+      key += char
+    else value += char
+  }
+
+  assign(tag.length)
 
   return {
-    name: result.attrs.name,
-    lang: result.attrs.lang,
-    setup: !!result.attrs.setup,
+    attrs,
+    namePos: {
+      start: namePos.start + start,
+      end: namePos.end + start,
+    },
   }
+}
+
+function parseQuotes(str: string): string {
+  if (str.length <= 1)
+    return str
+
+  if (['\'', '\"'].includes(str[0]) && str[0] === str[str.length - 1])
+    return str.slice(1, -1)
+
+  return str
 }
